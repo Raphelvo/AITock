@@ -1,0 +1,15 @@
+{
+  "name": "AITock",
+  "title": "AITock",
+  "description": "Générateur de plateau Tock (4 ou 6 joueurs) pour FoundryVTT. Plateau circulaire, couleurs synchronisées avec les joueurs.",
+  "version": "1.0.0",
+  "author": "Raphelvo & Copilot",
+  "minimumCoreVersion": "10",
+  "compatibleCoreVersion": "11",
+  "scripts": ["scripts/main.js"],
+  "esmodules": [],
+  "styles": [],
+  "packs": [],
+  "languages": [],
+  "url": "https://github.com/Raphelvo/AITock"
+}
