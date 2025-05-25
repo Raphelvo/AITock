@@ -1,0 +1,9 @@
+AITock - Historique des versions
+
+1.1.0 - 2025-05-25
+- Compatibilité Foundry VTT v12 (nouveaux createDocuments en minuscules)
+- Génération des pions même sans joueur connecté
+- Fichiers séparés et structure modulaire
+
+1.0.0 - 2025-01-01
+- Première version fonctionnelle pour Foundry VTT v10/v11
