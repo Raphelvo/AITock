@@ -6,6 +6,9 @@ export function registerMenu() {
       name: "tock-tools",
       title: "Outils Tock",
       icon: "fas fa-chess-board",
+      layer: null, // <-- INDISPENSABLE pour ne pas provoquer d'erreur
+      activeTool: "tock-config", // Optionnel : le bouton qui sera actif par défaut
+      visible: true,
       tools: [
         {
           name: "tock-config",

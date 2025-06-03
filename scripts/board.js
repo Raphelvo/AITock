@@ -15,6 +15,12 @@ import {
 import { createTokensForColor } from "./tokens.js";
 
 export async function createBoardSceneAndTokens() {
+  const TOTAL_CASES = CASES_PER_COLOR * PLAYER_COUNT;
+  const RADIUS_PATH = (TOTAL_CASES * CASE_SIZE * 1.05) / (2 * Math.PI);
+  const RADIUS_BASE = RADIUS_PATH + 150;
+  const RADIUS_HOME_START = RADIUS_PATH - 150;
+  const RADIUS_HOME_END = RADIUS_PATH - 300;
+
   let scene = game.scenes.find(s => s.name === SCENE_NAME);
   if (!scene) {
     scene = await Scene.create({
@@ -42,68 +48,104 @@ export async function createBoardSceneAndTokens() {
   if (oldTokens.length > 0) await canvas.scene.deleteEmbeddedDocuments("Token", oldTokens.map(t => t.id));
 
   const colors = getPlayerColors();
-  const RADIUS_PATH = 800;
-  const RADIUS_BASE = 950;
-  const RADIUS_HOME_START = 650;
-  const RADIUS_HOME_END = 500;
 
   for (let c = 0; c < PLAYER_COUNT; c++) {
-    const baseAngle = (2 * Math.PI * c) / PLAYER_COUNT;
-
-    // Cases de parcours
+    // Cases de parcours (fond blanc + rond couleur + numéro)
     for (let i = 0; i < CASES_PER_COLOR; i++) {
-      const angle = baseAngle + (2 * Math.PI * i) / (CASES_PER_COLOR * PLAYER_COUNT);
+      const globalIndex = c * CASES_PER_COLOR + i;
+      const angle = (2 * Math.PI * globalIndex) / TOTAL_CASES;
       const x = CENTER + RADIUS_PATH * Math.cos(angle) - CASE_SIZE / 2;
       const y = CENTER + RADIUS_PATH * Math.sin(angle) - CASE_SIZE / 2;
-      await canvas.scene.createEmbeddedDocuments("Drawing", [{
-        type: "ellipse",
+
+      // Fond blanc
+      const bgData = {
+        type: "e",
+        x: x - CASE_SIZE*0.05,
+        y: y - CASE_SIZE*0.05,
+        fillColor: "#fff",
+        fillAlpha: 1,
+        strokeColor: "#ddd",
+        strokeWidth: 2,
+        width: CASE_SIZE*1.1,
+        height: CASE_SIZE*1.1,
+        flags: { [MODULE_NAME]: { type: "path-bg", color: colors[c].h, index: c, order: i } }
+      };
+      await canvas.scene.createEmbeddedDocuments("Drawing", [bgData]);
+
+      // Rond couleur
+      const drawingData = {
+        type: "e",
         x, y,
+        fillColor: colors[c].h,
+        fillAlpha: 0.25,
+        strokeColor: colors[c].h,
+        strokeWidth: 3,
         width: CASE_SIZE,
         height: CASE_SIZE,
-        fillColor: colors[c],
-        fillAlpha: 0.25,
-        strokeColor: colors[c],
-        strokeWidth: 3,
-        flags: { [MODULE_NAME]: { type: "path", color: colors[c], index: c, order: i } }
-      }]);
+        flags: { [MODULE_NAME]: { type: "path", color: colors[c].h, index: c, order: i } }
+      };
+      await canvas.scene.createEmbeddedDocuments("Drawing", [drawingData]);
+
+      // Numéro centré (type: "t", pas de shape)
+      const textData = {
+        type: "t",
+        x: x + CASE_SIZE / 2,
+        y: y + CASE_SIZE / 2,
+        text: {
+          text: String(i + 1),
+          fontSize: Math.round(CASE_SIZE / 2.2),
+          color: "#222",
+          align: 1,
+          stroke: "#fff",
+          strokeThickness: 2
+        },
+        fillAlpha: 1,
+        flags: { [MODULE_NAME]: { type: "case-number", color: colors[c].h, index: c, order: i } }
+      };
+      await canvas.scene.createEmbeddedDocuments("Drawing", [textData]);
     }
-    // Bases
+
+    // Bases (ellipse)
     for (let i = 0; i < BASES_PER_COLOR; i++) {
-      const angle = baseAngle + (Math.PI / (PLAYER_COUNT * 2)) * (i - 1.5);
+      const angle = (2 * Math.PI * c) / PLAYER_COUNT + (Math.PI / (PLAYER_COUNT * 2)) * (i - 1.5);
       const x = CENTER + RADIUS_BASE * Math.cos(angle) - CASE_SIZE / 2;
       const y = CENTER + RADIUS_BASE * Math.sin(angle) - CASE_SIZE / 2;
-      await canvas.scene.createEmbeddedDocuments("Drawing", [{
-        type: "ellipse",
+      const drawingData = {
+        type: "e",
         x, y,
-        width: CASE_SIZE,
-        height: CASE_SIZE,
-        fillColor: colors[c],
+        fillColor: colors[c].h,
         fillAlpha: 0.85,
         strokeColor: "#222",
         strokeWidth: 4,
-        flags: { [MODULE_NAME]: { type: "base", color: colors[c], index: c, order: i } }
-      }]);
-    }
-    // Maisons
-    for (let i = 0; i < HOMES_PER_COLOR; i++) {
-      const homeRadius = RADIUS_HOME_START - (i * ((RADIUS_HOME_START - RADIUS_HOME_END) / (HOMES_PER_COLOR - 1)));
-      const angle = baseAngle;
-      const x = CENTER + homeRadius * Math.cos(angle) - CASE_SIZE / 2;
-      const y = CENTER + homeRadius * Math.sin(angle) - CASE_SIZE / 2;
-      await canvas.scene.createEmbeddedDocuments("Drawing", [{
-        type: "ellipse",
-        x, y,
         width: CASE_SIZE,
         height: CASE_SIZE,
-        fillColor: colors[c],
+        flags: { [MODULE_NAME]: { type: "base", color: colors[c].h, index: c, order: i } }
+      };
+      await canvas.scene.createEmbeddedDocuments("Drawing", [drawingData]);
+    }
+
+    // Maisons (ellipse)
+    for (let i = 0; i < HOMES_PER_COLOR; i++) {
+      const homeRadius = RADIUS_HOME_START - (i * ((RADIUS_HOME_START - RADIUS_HOME_END) / (HOMES_PER_COLOR - 1)));
+      const angle = (2 * Math.PI * c) / PLAYER_COUNT;
+      const x = CENTER + homeRadius * Math.cos(angle) - CASE_SIZE / 2;
+      const y = CENTER + homeRadius * Math.sin(angle) - CASE_SIZE / 2;
+      const drawingData = {
+        type: "e",
+        x, y,
+        fillColor: colors[c].h,
         fillAlpha: 0.5,
         strokeColor: "#222",
         strokeWidth: 4,
-        flags: { [MODULE_NAME]: { type: "home", color: colors[c], index: c, order: i } }
-      }]);
+        width: CASE_SIZE,
+        height: CASE_SIZE,
+        flags: { [MODULE_NAME]: { type: "home", color: colors[c].h, index: c, order: i } }
+      };
+      await canvas.scene.createEmbeddedDocuments("Drawing", [drawingData]);
     }
+
     // Jetons de départ
-    await createTokensForColor(canvas.scene, PLAYER_DEFAULT_NAMES[c], colors[c], c, baseAngle, RADIUS_BASE);
+    await createTokensForColor(canvas.scene, PLAYER_DEFAULT_NAMES[c], colors[c].h, c, (2 * Math.PI * c) / PLAYER_COUNT, RADIUS_BASE);
   }
 
   ui.notifications.info(`[AITock] Plateau Tock ${PLAYER_COUNT} joueurs généré !`);
