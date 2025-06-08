@@ -6,6 +6,34 @@ Ce dossier contient la documentation détaillée des étapes de développement d
 
 - [x] Création de la structure du projet
 - [x] Rédaction de la documentation initiale
+- [x] Compilation TypeScript/JS fonctionnelle (dist/main.js généré sans erreur)
+- [x] Exposition d'une fonction globale (window.AITock) pour macros/utilisateurs
+
+## Structure des fichiers du module
+
+| Fichier                | Rôle                                                                 | Fonctions accessibles de l’extérieur                |
+|------------------------|----------------------------------------------------------------------|-----------------------------------------------------|
+| `src/main.ts`          | Point d’entrée du module. Initialise le module, expose l’API globale | `window.AITock.exampleFunction()`                   |
+| `src/config.ts`        | Déclaration et enregistrement des paramètres configurables du module | (aucune fonction globale, tout est interne)         |
+| `src/init_board.ts`    | Création et gestion du plateau de jeu (cases, liens, mémoire)        | `creerPlateau()`                                    |
+| `src/init_partie.ts`   | Orchestration Foundry : gestion des PJ, chat, démarrage de partie    | `demarrerPartieTock()`, `participerTock()`          |
+| `src/gestion_partie.ts`| Gestion des joueurs, pions, logique d’initialisation de partie       | `initialiserPartie()`                               |
+| `src/global.d.ts`      | Déclaration de l’extension de l’objet global `window`                | (déclaration de type, pas de fonction)              |
+| `dist/main.js`         | Fichier JavaScript généré, chargé par Foundry                        | `window.AITock.exampleFunction()`, `window.AITock.demarrerPartieTock()` |
+| `lang/fr.json`         | Fichier de traduction française                                      | (utilisé par Foundry pour l’internationalisation)   |
+| `lang/en.json`         | Fichier de traduction anglaise                                       | (utilisé par Foundry pour l’internationalisation)   |
+| `module.json`          | Manifest du module pour Foundry VTT                                  | (décrit les scripts, styles, langues, etc.)         |
+
+### Fonctions accessibles globalement
+
+- **`window.AITock.exampleFunction()`**  
+  Fonction d’exemple accessible depuis la console ou une macro utilisateur.
+- **`window.AITock.demarrerPartieTock()`**  
+  Lance la séquence de démarrage de partie (suppression des anciens PJ, message de participation dans le chat).
+- **`window.AITock.participerTock()`**  
+  Création d’un PJ pour le joueur qui clique sur “Participer” dans le chat.
+
+---
 
 ## Actions
 
