@@ -4,8 +4,11 @@
 
 Ce fichier fait le point sur l'avancement du développement du module AITock pour Foundry VTT.
 
+**Important : le développement vise explicitement la compatibilité avec Foundry VTT v13 afin de bénéficier de son API.**
+
 ## Étapes principales
 
+- [ ] Création d'un module vide compatible Foundry VTT v13
 - [ ] Configuration des règles paramétrées dans le jeu
 - [ ] Création du plateau de jeu
 - [ ] Gestion des pions
@@ -18,19 +21,19 @@ Ce fichier fait le point sur l'avancement du développement du module AITock pou
 
 ## Détails
 
-- La structure du projet est en place.
+- La structure du projet est en cours de mise en place.
 - La documentation de développement est rédigée.
-- Prochaine étape : débuter la configuration des règles paramétrées.
+- Prochaine étape : finaliser la création du module vide compatible Foundry VTT v13.
 
 Ce fichier sera mis à jour à chaque progression significative du développement.
 
 ## Tâche en cours
 
-Configuration des règles paramétrées dans le jeu :
-- Définition des options (nombre de joueurs, équipes, variantes)
-- Création de l'interface de configuration dans Foundry VTT
-- Enregistrement des paramètres dans les settings du module
+Création d'un module vide compatible Foundry VTT v13 :
+- Initialisation de la structure du module
+- Création du fichier manifest (module.json)
+- Vérification de la compatibilité avec Foundry VTT v13
 
 ## Prochaine tâche
 
-Création du plateau de jeu
+Configuration des règles paramétrées dans le jeu

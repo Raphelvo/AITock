@@ -10,7 +10,9 @@ L'objectif est d'être le premier joueur ou la première équipe à amener tous 
 
 ## Mise en place
 - Chaque joueur choisit une couleur et reçoit les pions correspondants.
-- Les pions sont placés dans leur maison respective, en dehors du parcours.
+- **Chaque joueur a 4 pions** de sa couleur.
+- Les pions sont placés sur les **cases de départ** de leur couleur au début de la partie.
+- Le plateau comporte **18 cases de parcours par joueur**, plus **4 cases de départ** et **4 cases d’arrivée** par joueur.
 - En équipe, les coéquipiers se placent face à face.
 - La distribution des cartes suit ce cycle :
   - Au premier tour, chaque joueur reçoit 5 cartes.
@@ -40,12 +42,18 @@ Chaque carte a une fonction précise :
 - En passant sur un pion adverse avec un Roi.
 
 ### Cases protégées
-- Les pions dans leur maison ou dans la case Arrivée sont intouchables.
+- Les pions sur les cases de départ ou dans la case Arrivée sont intouchables.
 
 ### Arrivée
 - Pour entrer dans la case Arrivée, il faut jouer une carte avec la valeur exacte.
 - Si la valeur est trop grande, le pion avance et refait le tour du plateau.
 - Une fois dans la case Arrivée, le pion ne bouge plus.
+- **On ne peut pas reculer sur une case d’arrivée.**
+
+## Connexions spéciales du plateau
+- La case suivante d’une **case de départ** est la 18e case du joueur précédent (si on commence à 1).
+- La case suivante de la **16e case du joueur précédent** est la 1ère case d’arrivée du joueur courant, puis la 2e, 3e, 4e.
+- Les cases d’arrivée sont en ligne et ne permettent pas de reculer.
 
 ## Fin de la partie
 - Le premier joueur ou la première équipe à amener tous ses pions dans la case Arrivée gagne.
