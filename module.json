@@ -1,0 +1,31 @@
+{
+  "name": "AITock",
+  "title": "AITock",
+  "description": "Générateur de plateau Tock (4 ou 6 joueurs, équipes ou non) pour FoundryVTT. Gestion des mains, couleurs, règles et notifications.",
+  "version": "1.0.0",
+  "author": "Raphelvo",
+  "minimumCoreVersion": "13",
+  "compatibleCoreVersion": "13",
+  "esmodules": [
+    "dist/main.js"
+  ],
+  "styles": [],
+  "packs": [],
+  "languages": [
+    {
+      "lang": "fr",
+      "name": "Français",
+      "path": "lang/fr.json"
+    },
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "url": "https://github.com/Raphelvo/AITock",
+  "manifest": "https://github.com/Raphelvo/AITock/raw/main/module.json",
+  "download": "https://github.com/Raphelvo/AITock/archive/refs/heads/main.zip",
+  "readme": "https://github.com/Raphelvo/AITock/blob/main/README.md",
+  "license": "MIT"
+}

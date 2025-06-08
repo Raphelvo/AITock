@@ -1,0 +1,6 @@
+# Fichiers à ignorer pour le module AITock
+node_modules/
+dist/
+*.log
+*.tsbuildinfo
+.env
