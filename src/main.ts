@@ -1,5 +1,3 @@
-export * from './types';
-
 // Fonction principale du module AITock
 
 export const exampleFunction = () => {
