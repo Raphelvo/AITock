@@ -10,14 +10,22 @@ import { creerPlateau } from "./init_board";
  */
 export const RAYON_CASE = 60;
 
-export async function dessinerCase(x: number, y: number, rayon: number = RAYON_CASE, couleur: string, label?: string) {
+export async function dessinerCase(
+    x: number,
+    y: number,
+    rayon: number = RAYON_CASE,
+    couleur: string,
+    label?: string,
+    couleurContour?: string,
+    caseId?: number // <-- Seul l'id de la case est stocké
+) {
     if (!canvas?.scene) {
         ui.notifications?.warn("AITock: Aucune scène active !");
         return;
     }
 
     // Paramètres de visibilité
-    const fillAlpha = 0.7;
+    const fillAlpha = 1; // Toujours complètement opaque
     const strokeAlpha = 0.9;
     const strokeWidth = 2;
     const hasText = !!label && label.trim().length > 0;
@@ -29,12 +37,15 @@ export async function dessinerCase(x: number, y: number, rayon: number = RAYON_C
         return;
     }
 
+    const strokeColor = couleurContour ?? "#222222"; // couleur du trait
+
     const drawingData: any = {
         x: x - rayon,
         y: y - rayon,
+        fillType: 1, // 0=None, 1=Solid, 2=Pattern
         fillColor: hasFill ? couleur : null,
         fillAlpha: hasFill ? fillAlpha : 0,
-        strokeColor: hasStroke ? "#000000" : null,
+        strokeColor: hasStroke ? strokeColor : null,
         strokeWidth: hasStroke ? strokeWidth : 0,
         strokeAlpha: hasStroke ? strokeAlpha : 0,
         text: hasText ? label : "",
@@ -44,27 +55,15 @@ export async function dessinerCase(x: number, y: number, rayon: number = RAYON_C
             type: "e",
             width: rayon * 2,
             height: rayon * 2
+        },
+        flags: {
+            aitock: {
+                caseId: caseId ?? null // <-- Uniquement l'id de la case
+            }
         }
     };
 
     await canvas.scene.createEmbeddedDocuments("Drawing", [drawingData]);
-}
-
-/**
- * Affiche la case 1 du joueur 1 sur la scène définie.
- * @param nbJoueurs Nombre de joueurs
- * @param sceneId   ID de la scène cible (optionnel, sinon scène active)
- */
-export async function afficherCase1Joueur1(nbJoueurs: number, sceneId?: string) {
-    const plateau = creerPlateau(nbJoueurs, sceneId);
-    // Cherche la première case "normale" du joueur 1 (id 1)
-    const case1 = plateau.find(c => c.id === 1 && c.type === "normale");
-    if (!case1) {
-        ui.notifications?.warn("AITock: Impossible de trouver la case 1 du joueur 1 !");
-        return;
-    }
-    // Affiche la case sur la scène active
-    await dessinerCase(case1.x, case1.y, 60, "#33ccff", `1`);
 }
 
 /**
@@ -76,13 +75,57 @@ export async function afficherCase1Joueur1(nbJoueurs: number, sceneId?: string) 
 export async function afficherPlateau(nbJoueurs: number, sceneId?: string) {
     const plateau = creerPlateau(nbJoueurs, sceneId);
     const placesTock: string[] = game.settings.get("aitock", "placesTock") ?? [];
+    const couleursDefaut = (window as any).COULEURS_JOUEURS;
     for (const c of plateau) {
-        // Couleur du joueur Foundry ou gris si non attribué
         let couleur = "#cccccc";
-        if (c.joueur && placesTock[c.joueur - 1]) {
-            const user = game.users?.get(placesTock[c.joueur - 1]);
-            couleur = user?.color ?? couleur;
+        if (c.joueur && couleursDefaut && c.joueur >= 1 && c.joueur <= couleursDefaut.length) {
+            const userId = placesTock[c.joueur - 1];
+            if (userId) {
+                const user = game.users?.get(userId);
+                couleur = user?.color ?? couleursDefaut[c.joueur - 1];
+            } else {
+                couleur = couleursDefaut[c.joueur - 1];
+            }
         }
-        await dessinerCase(c.x, c.y, RAYON_CASE, couleur, `${c.numeroCase}`);
+        const fillColor = c.protegee ? couleur : "#cccccc";
+        const label = c.type === "ciel" ? "Ciel" : `${c.numeroCase}`;
+        await dessinerCase(c.x, c.y, c.rayon, fillColor, label, couleur, c.id);
     }
 }
+
+/**
+ * Met à jour la couleur de toutes les cases associées à un joueur donné.
+ * @param joueur Le numéro du joueur (1, 2, ...)
+ * @param nouvelleCouleur La nouvelle couleur à appliquer (ex: "#ff0000")
+ */
+export async function mettreAJourCouleurCasesJoueur(joueur: number, nouvelleCouleur: string) {
+    const plateau = creerPlateau(game.settings.get("aitock", "nombreJoueurs"));
+    const caseIds = plateau.filter(c => c.joueur === joueur).map(c => c.id);
+
+    if (!caseIds.length) {
+        console.warn(`[AITock] Aucun id de case trouvé pour le joueur ${joueur}`);
+        return;
+    }
+
+    for (const drawing of canvas.drawings.placeables) {
+        const caseId = drawing.document.getFlag("aitock", "caseId");
+        if (caseIds.includes(caseId)) {
+            await drawing.document.update({
+                fillColor: nouvelleCouleur,
+                strokeColor: nouvelleCouleur
+            });
+        }
+    }
+}
+
+Hooks.on("updateUser", (user, data) => {
+    if (data.color) {
+        const placesTock: string[] = game.settings.get("aitock", "placesTock") ?? [];
+        const joueur = placesTock.findIndex(uid => uid === user.id) + 1;
+        if (joueur > 0) {
+            mettreAJourCouleurCasesJoueur(joueur, data.color);
+        } else {
+            console.warn(`[AITock] Aucun joueur associé à l'user.id=${user.id}`);
+        }
+    }
+});

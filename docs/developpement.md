@@ -72,4 +72,26 @@
 
 ---
 
+# Historique des actions et TODO-list
+
+## Historique des actions
+
+- [X] Refactorisation de la fonction creerPlateau pour une génération robuste du plateau de Tock.
+- [X] Ajout de logs détaillés pour chaque étape (cases normales, départs, arrivées, ciel).
+- [X] Correction du calcul de l’index du joueur précédent pour éviter les index négatifs.
+- [X] Ajout du champ 'protegee' sur les cases protégées (départ, arrivée, 18).
+- [X] Correction de la mise à jour dynamique des couleurs des cases lors du changement de couleur d’un joueur.
+- [X] Sécurisation de la génération du plateau et des accès aux tableaux internes.
+- [X] Documentation du processus de développement et des étapes dans les fichiers docs/.
+
+## TODO-list
+
+- [ ] Finaliser la gestion des arrivées et des connexions spéciales entre cases.
+- [ ] Ajouter des tests unitaires pour la génération du plateau.
+- [ ] Améliorer l’interface utilisateur pour la sélection des places et la visualisation du plateau.
+- [ ] Ajouter la gestion des pions et des déplacements.
+- [ ] Documenter les prochaines étapes dans `docs/etat_avancement.md` après chaque tâche terminée.
+
+---
+
 **Prêt pour commit & push !**

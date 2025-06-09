@@ -13,6 +13,9 @@ const couleursJoueurs = [
     "#e67e22"  // Joueur 6 - Orange
 ];
 
+// Rendez la variable accessible globalement
+(window as any).COULEURS_JOUEURS = couleursJoueurs;
+
 export async function demarrerPartieTock() {
     const anciensPJ = game.actors?.filter((a: any) => a.type === "character") ?? [];
     for (const pj of anciensPJ) {

@@ -1,15 +1,17 @@
-export type TypeCase = "normale" | "depart" | "arrivee";
+export type TypeCase = "normale" | "depart" | "arrivee" | "ciel";
 
 export interface CaseTock {
     id: number;
     type: TypeCase;
-    joueur: number;         // Numéro du joueur (1 à N)
-    numeroCase: number;     // Numéro de la case pour ce joueur (1 à N)
+    joueur: number;
+    numeroCase: number;
     suivantes: number[];
     precedentes: number[];
     x: number;
     y: number;
     nom: string;
+    rayon?: number;
+    protegee?: boolean; // <-- Ajout du champ protégé
 }
 
 /**
@@ -35,6 +37,11 @@ export function creerPlateau(nbJoueurs: number, sceneId?: string): CaseTock[] {
     const rayonArriveeMin = Math.floor(rayonCercle * 0.33);
     const rayonArriveeMax = rayonCercle - 60;
 
+    // Après avoir calculé le rayon idéal pour les cases normales :
+    const totalNormales = nbJoueurs * casesParJoueur;
+    const diametreCase = 2 * rayonCercle * Math.sin(Math.PI / totalNormales);
+    const rayonCaseNormal = diametreCase / 2;
+
     let id = 1;
     const normalesByJoueur: number[][] = Array.from({ length: nbJoueurs }, () => []);
     const departsByJoueur: number[][] = Array.from({ length: nbJoueurs }, () => []);
@@ -55,20 +62,32 @@ export function creerPlateau(nbJoueurs: number, sceneId?: string): CaseTock[] {
                 suivantes: [],
                 precedentes: [],
                 x, y,
-                nom: `${id}`
+                nom: `${id}`,
+                rayon: rayonCaseNormal,
+                protegee: (i + 1 === 18) // Case 18 protégée
             });
             normalesByJoueur[joueur - 1].push(id);
             id++;
         }
     }
 
-    // 2. Cases départ (regroupées à l'extérieur du cercle, par joueur)
+    // 2. Cases départ (toutes symétriques autour de la direction centre → case 18 du joueur précédent)
     for (let joueur = 1; joueur <= nbJoueurs; joueur++) {
-        const baseAngle = (2 * Math.PI * (joueur - 1)) / nbJoueurs;
+        // On veut placer les départs autour de la direction allant du centre vers la case 18 du joueur précédent
+        const prevJoueur = (joueur - 2 + nbJoueurs) % nbJoueurs; // joueur précédent (attention à l'indexation)
+        const idxCase18 = normalesByJoueur[prevJoueur][casesParJoueur - 1];
+        const case18 = cases[idxCase18 - 1];
+        const dx = case18.x - centreX;
+        const dy = case18.y - centreY;
+        const baseAngle = Math.atan2(dy, dx);
+
+        // Angle d'écart EXACTEMENT identique à celui entre 2 cases normales
+        const ecart = (2 * Math.PI) / (nbJoueurs * casesParJoueur);
+
         for (let d = 0; d < nbDeparts; d++) {
-            const angle = baseAngle + ((d - 1.5) * Math.PI) / (nbJoueurs * 3);
-            const x = Math.round(centreX + rayonDepart * Math.cos(angle));
-            const y = Math.round(centreY + rayonDepart * Math.sin(angle));
+            const angle = baseAngle + d * ecart;
+            const x = centreX + rayonDepart * Math.cos(angle);
+            const y = centreY + rayonDepart * Math.sin(angle);
             cases.push({
                 id,
                 type: "depart",
@@ -77,20 +96,23 @@ export function creerPlateau(nbJoueurs: number, sceneId?: string): CaseTock[] {
                 suivantes: [],
                 precedentes: [],
                 x, y,
-                nom: `${id}`
+                nom: `${id}`,
+                rayon: rayonCaseNormal,
+                protegee: true // Départ protégé
             });
             departsByJoueur[joueur - 1].push(id);
             id++;
         }
     }
 
-    // 3. Cases arrivée (ligne vers le centre, la 4 la plus proche du centre)
+    // 3. Cases arrivée (alignées entre case 16 et Ciel)
     for (let joueur = 1; joueur <= nbJoueurs; joueur++) {
-        const baseAngle = (2 * Math.PI * (joueur - 1)) / nbJoueurs;
+        const idxCase16 = normalesByJoueur[joueur - 1][15];
+        const case16 = cases[idxCase16 - 1];
         for (let a = 0; a < nbArrivees; a++) {
-            const rayon = rayonArriveeMax - ((rayonArriveeMax - rayonArriveeMin) * a) / (nbArrivees - 1);
-            const x = Math.round(centreX + rayon * Math.cos(baseAngle));
-            const y = Math.round(centreY + rayon * Math.sin(baseAngle));
+            const t = (a + 1) / (nbArrivees + 1);
+            const x = case16.x + t * (centreX - case16.x);
+            const y = case16.y + t * (centreY - case16.y);
             cases.push({
                 id,
                 type: "arrivee",
@@ -99,12 +121,29 @@ export function creerPlateau(nbJoueurs: number, sceneId?: string): CaseTock[] {
                 suivantes: [],
                 precedentes: [],
                 x, y,
-                nom: `${id}`
+                nom: `${id}`,
+                rayon: rayonCaseNormal,
+                protegee: true // Arrivée protégée
             });
             arriveesByJoueur[joueur - 1].push(id);
             id++;
         }
     }
+
+    // 4. Case centrale "Ciel"
+    cases.push({
+        id,
+        type: "ciel",
+        joueur: 0,
+        numeroCase: 0,
+        suivantes: [],
+        precedentes: [],
+        x: centreX,
+        y: centreY,
+        nom: "Ciel",
+        rayon: rayonCaseNormal,
+        protegee: false
+    });
 
     // Connexions suivantes/précédentes
     // Cases normales
@@ -132,12 +171,6 @@ export function creerPlateau(nbJoueurs: number, sceneId?: string): CaseTock[] {
             cases[idx - 1].precedentes = [prevIdx];
         }
     }
-    // Départs → première case normale du joueur
-    for (let joueur = 0; joueur < nbJoueurs; joueur++) {
-        for (let d = 0; d < nbDeparts; d++) {
-            cases[departsByJoueur[joueur][d] - 1].suivantes = [normalesByJoueur[joueur][0]];
-        }
-    }
     // Arrivées → en ligne
     for (let joueur = 0; joueur < nbJoueurs; joueur++) {
         for (let a = 0; a < nbArrivees; a++) {
@@ -147,6 +180,15 @@ export function creerPlateau(nbJoueurs: number, sceneId?: string): CaseTock[] {
             if (a > 0) {
                 cases[arriveesByJoueur[joueur][a] - 1].precedentes = [arriveesByJoueur[joueur][a - 1]];
             }
+        }
+    }
+    // Départs → case 18 du joueur précédent (ordre circulaire)
+    for (let joueur = 0; joueur < nbJoueurs; joueur++) {
+        // Le joueur précédent (avec boucle)
+        const prevJoueur = (joueur - 1 + nbJoueurs) % nbJoueurs;
+        const case18Prev = normalesByJoueur[prevJoueur][casesParJoueur - 1];
+        for (let d = 0; d < nbDeparts; d++) {
+            cases[departsByJoueur[joueur][d] - 1].suivantes = [case18Prev];
         }
     }
 

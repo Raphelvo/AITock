@@ -9,7 +9,7 @@ import { registerAITockSettings } from "./config";
 
 // Importe les fonctions de gestion de partie
 import { demarrerPartieTock, participerTock } from "./init_partie";
-import { dessinerCase } from "./graph_board";
+import { dessinerCase, afficherPlateau} from "./graph_board";
 import { creerPlateau } from "./init_board";
 
 // Enregistrement des paramètres du module
@@ -43,7 +43,7 @@ Hooks.once('ready', async () => {
         dessinerCase,
         demarrerPartieTock,
         participerTock,
-        creerPlateau
+        afficherPlateau
     };
 
     // Ajoute un bouton "Tock" dans la barre d'outils à gauche (sous le logo)

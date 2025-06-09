@@ -18,7 +18,7 @@ Ce document explique la méthode de travail à suivre pour le développement du 
    - Cocher la tâche dans `docs/developpement.md`.
    - Mettre à jour `docs/etat_avancement.md` pour décrire la nouvelle tâche en cours et la suivante.
    - Ajouter si besoin des détails ou sous-tâches dans la documentation.
-5. Toujours commenter le code en français sans accents.
+5. Toujours commenter le code en francais sans accents (pas d'accents pour compatibilité).
 6. Toute modification importante doit être documentée dans le dossier `docs/`.
 
 ## 3. Communication avec l'IA
@@ -37,4 +37,4 @@ Ce document explique la méthode de travail à suivre pour le développement du 
 
 ---
 
-Pour toute question ou nouvelle idée, ajouter une note dans la documentation avant de modifier le code.
+Pour toute question ou nouvelle idee, ajouter une note dans la documentation avant de modifier le code.
