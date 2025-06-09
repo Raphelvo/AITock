@@ -153,4 +153,29 @@ export function registerAITockSettings() {
         console.log("[AITock] Paramètre 'actorType' enregistré");
         console.log("[AITock] Types d'Actor détectés :", actorTypes);
     });
+
+    Hooks.once('setup', () => {
+        // Récupère la liste des scènes existantes
+        const scenes = game.scenes?.reduce((acc: Record<string, string>, scene: any) => {
+            acc[scene.id] = scene.name;
+            return acc;
+        }, {}) || {};
+
+        // Ajoute "Plateau Tock" comme option spéciale si elle n'existe pas déjà
+        const defaultName = "Plateau Tock";
+        const hasDefault = Object.values(scenes).includes(defaultName);
+        if (!hasDefault) {
+            scenes["__tock_default__"] = defaultName;
+        }
+
+        game.settings.register("aitock", "sceneTockId", {
+            name: "Scène du plateau Tock",
+            hint: "Choisissez la scène où se jouera le Tock. Si 'Plateau Tock' est choisi et n'existe pas, elle sera créée.",
+            scope: "world",
+            config: true,
+            type: String,
+            choices: scenes,
+            default: "__tock_default__"
+        });
+    });
 }

@@ -43,6 +43,8 @@
 - Création automatique d’un PJ associé à l’utilisateur (nom = nom utilisateur + numéro de joueur)
 - Suppression automatique du PJ associé quand le joueur quitte la partie (ownership correct)
 - Sauvegarde dans l’Actor : couleur, numéro, équipe, partenaires
+- Génération dynamique du plateau avec connexions précédentes/suivantes pour chaque case (structure circulaire correcte, la précédente de la toute première case pointe bien vers la dernière case du dernier joueur)
+- Ajout systématique des propriétés `joueur` et `numeroCase` à chaque case du plateau
 - Affichage toujours synchronisé avec la couleur de l’utilisateur Foundry
 - Rafraîchissement automatique de la liste si un joueur change sa couleur
 - Gestion du mode équipe (affichage, partenaires, numéro d’équipe)
@@ -56,6 +58,17 @@
 - Lorsqu’un joueur quitte la partie, l’acteur associé est supprimé automatiquement.
 - Le module est système-agnostique : il s’adapte à la liste des types d’Actor du système Foundry utilisé.
 - L’affichage des places dans le chat est mis à jour en temps réel si un joueur change sa couleur.
+
+---
+
+## Prochaine étape : Création automatique des tokens sur les cases de départ
+
+- Lorsqu’un joueur prend une place, 4 tokens doivent être créés automatiquement sur la scène active, positionnés sur les cases de départ correspondant à ce joueur.
+- Chaque token doit être associé à l’acteur du joueur.
+- Les coordonnées doivent correspondre aux cases de départ du plateau pour ce joueur.
+- Les tokens doivent être colorés selon la couleur du joueur.
+- Les tokens doivent porter une information permettant d’identifier à quel joueur et à quel pion ils appartiennent.
+- Prévoir la suppression automatique des tokens associés quand le joueur quitte la partie.
 
 ---
 

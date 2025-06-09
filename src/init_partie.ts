@@ -32,7 +32,12 @@ export async function demarrerPartieTock() {
  */
 function afficherChoixPlacesTock() {
     const nbJoueurs = parseInt(game.settings.get("aitock", "nombreJoueurs") ?? "4");
-    const places: (string|null)[] = game.settings.get("aitock", "placesTock") ?? Array(nbJoueurs).fill(null);
+    let places: (string|null)[] = game.settings.get("aitock", "placesTock") ?? [];
+    // Si le tableau n'est pas à la bonne taille, on le corrige et on sauvegarde
+    if (places.length !== nbJoueurs) {
+        places = Array(nbJoueurs).fill(null).map((_, i) => places[i] ?? null);
+        game.settings.set("aitock", "placesTock", places);
+    }
     const modeEquipes = game.settings.get("aitock", "modeEquipes") ?? false;
 
     // Calcul dynamique du nombre d'équipes
@@ -100,7 +105,12 @@ Hooks.on("renderChatMessageHTML", (message: any, html: HTMLElement) => {
 export async function participerTock(userId: string, joueurNum?: number, chatMessageId?: string) {
     if (!joueurNum) return;
     const nbJoueurs = parseInt(game.settings.get("aitock", "nombreJoueurs") ?? "4");
-    let places: (string|null)[] = game.settings.get("aitock", "placesTock") ?? Array(nbJoueurs).fill(null);
+    let places: (string|null)[] = game.settings.get("aitock", "placesTock") ?? [];
+    // Corrige la taille du tableau si besoin
+    if (places.length !== nbJoueurs) {
+        places = Array(nbJoueurs).fill(null).map((_, i) => places[i] ?? null);
+        await game.settings.set("aitock", "placesTock", places);
+    }
 
     // Calcul dynamique du nombre d'équipes
     let joueursParEquipe = 2;
@@ -112,11 +122,11 @@ export async function participerTock(userId: string, joueurNum?: number, chatMes
 
     // Vérifie si la place est déjà prise
     if (places[joueurNum - 1]) {
-        ui.notifications?.warn("Désolé, la place est déjà prise.");
+        ui.notifications?.warn("AITock: Désolé, la place est déjà prise.");
         return;
     }
     if (places.includes(userId)) {
-        ui.notifications?.info("Vous avez déjà choisi une place.");
+        ui.notifications?.info("AITock: Vous avez déjà choisi une place.");
         return;
     }
 
@@ -143,7 +153,7 @@ export async function participerTock(userId: string, joueurNum?: number, chatMes
     await Actor.create({
         name: nomActeur,
         type: actorType,
-        ownership: { [userId]: 3, default: 0 }, // <--- Ajoute default: 0 pour forcer la propriété
+        ownership: { [userId]: 3, default: 0 },
         flags: {
             aitock: {
                 couleurJoueur,
@@ -153,7 +163,7 @@ export async function participerTock(userId: string, joueurNum?: number, chatMes
             }
         }
     });
-    ui.notifications?.info(`Votre PJ "${nom}" a été créé !`);
+    ui.notifications?.info(`AITock: Votre acteur "${nom}" a été créé !`);
 
     // Met à jour la couleur de l'utilisateur Foundry si différente
     const user = game.users?.get(userId);
@@ -170,7 +180,12 @@ export async function participerTock(userId: string, joueurNum?: number, chatMes
 export async function quitterTock(userId: string, joueurNum?: number) {
     if (!joueurNum) return;
     const nbJoueurs = parseInt(game.settings.get("aitock", "nombreJoueurs") ?? "4");
-    let places: (string|null)[] = game.settings.get("aitock", "placesTock") ?? Array(nbJoueurs).fill(null);
+    let places: (string|null)[] = game.settings.get("aitock", "placesTock") ?? [];
+    // Corrige la taille du tableau si besoin
+    if (places.length !== nbJoueurs) {
+        places = Array(nbJoueurs).fill(null).map((_, i) => places[i] ?? null);
+        await game.settings.set("aitock", "placesTock", places);
+    }
 
     // Retire la place si c'est bien le joueur courant
     if (places[joueurNum - 1] === userId) {

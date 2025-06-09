@@ -3,15 +3,13 @@ export type TypeCase = "normale" | "depart" | "arrivee";
 export interface CaseTock {
     id: number;
     type: TypeCase;
-    proprietaireJoueurId?: number;
-    suivantes: number[];    // Tableau d'id des cases suivantes possibles
-    precedentes: number[];  // Tableau d'id des cases précédentes possibles
-    effetSpecial?: string;
-    pion?: {
-        joueurId: number;
-        couleur: string;
-        estProtégé: boolean;
-    } | null;
+    joueur: number;         // Numéro du joueur (1 à N)
+    numeroCase: number;     // Numéro de la case pour ce joueur (1 à N)
+    suivantes: number[];
+    precedentes: number[];
+    x: number;
+    y: number;
+    nom: string;
 }
 
 /**
@@ -19,106 +17,139 @@ export interface CaseTock {
  * Les connexions spéciales sont respectées.
  * @param nbJoueurs Nombre de joueurs (2 à 6)
  */
-export function creerPlateau(nbJoueurs: number): CaseTock[] {
+export function creerPlateau(nbJoueurs: number, sceneId?: string): CaseTock[] {
     const cases: CaseTock[] = [];
     const casesParJoueur = 18;
     const nbDeparts = 4;
     const nbArrivees = 4;
-    let id = 0;
 
-    // Pour chaque joueur, on stocke les ids des cases importantes
-    const departIds: number[][] = [];
-    const arriveeIds: number[][] = [];
-    const parcoursIds: number[][] = [];
+    // Récupère la scène cible depuis l'ID (ou utilise la scène active si non précisé)
+    let scene = sceneId ? game.scenes?.get(sceneId) : canvas?.scene;
+    // Valeurs par défaut si la scène n'est pas trouvée
+    const width = scene?.width ?? 4000;
+    const height = scene?.height ?? 2400;
+    const centreX = width / 2;
+    const centreY = height / 2;
+    const rayonCercle = Math.floor(0.35 * Math.min(width, height));
+    const rayonDepart = Math.floor(rayonCercle * 1.15);
+    const rayonArriveeMin = Math.floor(rayonCercle * 0.33);
+    const rayonArriveeMax = rayonCercle - 60;
 
-    // Création des cases de chaque joueur
+    let id = 1;
+    const normalesByJoueur: number[][] = Array.from({ length: nbJoueurs }, () => []);
+    const departsByJoueur: number[][] = Array.from({ length: nbJoueurs }, () => []);
+    const arriveesByJoueur: number[][] = Array.from({ length: nbJoueurs }, () => []);
+
+    // 1. Cases normales (cercle)
     for (let joueur = 1; joueur <= nbJoueurs; joueur++) {
-        departIds[joueur] = [];
-        arriveeIds[joueur] = [];
-        parcoursIds[joueur] = [];
-
-        // Cases de départ
-        for (let d = 0; d < nbDeparts; d++) {
-            cases.push({
-                id,
-                type: "depart",
-                proprietaireJoueurId: joueur,
-                suivantes: [],
-                precedentes: []
-            });
-            departIds[joueur].push(id);
-            id++;
-        }
-
-        // Cases du parcours principal
-        for (let p = 0; p < casesParJoueur; p++) {
+        for (let i = 0; i < casesParJoueur; i++) {
+            const globalIndex = (joueur - 1) * casesParJoueur + i;
+            const angle = (2 * Math.PI * globalIndex) / (nbJoueurs * casesParJoueur);
+            const x = Math.round(centreX + rayonCercle * Math.cos(angle));
+            const y = Math.round(centreY + rayonCercle * Math.sin(angle));
             cases.push({
                 id,
                 type: "normale",
-                proprietaireJoueurId: joueur,
+                joueur,
+                numeroCase: i + 1,
                 suivantes: [],
-                precedentes: []
+                precedentes: [],
+                x, y,
+                nom: `${id}`
             });
-            parcoursIds[joueur].push(id);
+            normalesByJoueur[joueur - 1].push(id);
             id++;
         }
+    }
 
-        // Cases d'arrivée
+    // 2. Cases départ (regroupées à l'extérieur du cercle, par joueur)
+    for (let joueur = 1; joueur <= nbJoueurs; joueur++) {
+        const baseAngle = (2 * Math.PI * (joueur - 1)) / nbJoueurs;
+        for (let d = 0; d < nbDeparts; d++) {
+            const angle = baseAngle + ((d - 1.5) * Math.PI) / (nbJoueurs * 3);
+            const x = Math.round(centreX + rayonDepart * Math.cos(angle));
+            const y = Math.round(centreY + rayonDepart * Math.sin(angle));
+            cases.push({
+                id,
+                type: "depart",
+                joueur,
+                numeroCase: d + 1,
+                suivantes: [],
+                precedentes: [],
+                x, y,
+                nom: `${id}`
+            });
+            departsByJoueur[joueur - 1].push(id);
+            id++;
+        }
+    }
+
+    // 3. Cases arrivée (ligne vers le centre, la 4 la plus proche du centre)
+    for (let joueur = 1; joueur <= nbJoueurs; joueur++) {
+        const baseAngle = (2 * Math.PI * (joueur - 1)) / nbJoueurs;
         for (let a = 0; a < nbArrivees; a++) {
+            const rayon = rayonArriveeMax - ((rayonArriveeMax - rayonArriveeMin) * a) / (nbArrivees - 1);
+            const x = Math.round(centreX + rayon * Math.cos(baseAngle));
+            const y = Math.round(centreY + rayon * Math.sin(baseAngle));
             cases.push({
                 id,
                 type: "arrivee",
-                proprietaireJoueurId: joueur,
+                joueur,
+                numeroCase: a + 1,
                 suivantes: [],
-                precedentes: []
+                precedentes: [],
+                x, y,
+                nom: `${id}`
             });
-            arriveeIds[joueur].push(id);
+            arriveesByJoueur[joueur - 1].push(id);
             id++;
         }
     }
 
-    // Relier les cases du parcours principal en cercle
-    for (let joueur = 1; joueur <= nbJoueurs; joueur++) {
-        for (let p = 0; p < casesParJoueur; p++) {
-            const currentId = parcoursIds[joueur][p];
-            let nextJoueur = joueur;
-            let nextP = p + 1;
-            if (nextP >= casesParJoueur) {
-                nextJoueur = joueur % nbJoueurs + 1;
-                nextP = 0;
+    // Connexions suivantes/précédentes
+    // Cases normales
+    for (let joueur = 0; joueur < nbJoueurs; joueur++) {
+        for (let i = 0; i < casesParJoueur; i++) {
+            const idx = normalesByJoueur[joueur][i];
+            let prevIdx: number;
+            if (joueur === 0 && i === 0) {
+                // Précédente de la toute première case : dernière case du dernier joueur
+                prevIdx = normalesByJoueur[nbJoueurs - 1][casesParJoueur - 1];
+            } else if (i === 0) {
+                // Précédente de la première case de chaque joueur (sauf joueur 1) : dernière case du joueur précédent
+                prevIdx = normalesByJoueur[joueur - 1][casesParJoueur - 1];
+            } else {
+                // Sinon, précédente normale
+                prevIdx = normalesByJoueur[joueur][i - 1];
             }
-            const nextId = parcoursIds[nextJoueur][nextP];
-            cases[currentId].suivantes.push(nextId);
-            cases[nextId].precedentes.push(currentId);
+            const nextIdx = (i === casesParJoueur - 1 && joueur === nbJoueurs - 1)
+                ? normalesByJoueur[0][0] // Boucle sur la toute première case
+                : (i === casesParJoueur - 1)
+                    ? normalesByJoueur[joueur + 1][0]
+                    : normalesByJoueur[joueur][i + 1];
+
+            cases[idx - 1].suivantes = [nextIdx];
+            cases[idx - 1].precedentes = [prevIdx];
+        }
+    }
+    // Départs → première case normale du joueur
+    for (let joueur = 0; joueur < nbJoueurs; joueur++) {
+        for (let d = 0; d < nbDeparts; d++) {
+            cases[departsByJoueur[joueur][d] - 1].suivantes = [normalesByJoueur[joueur][0]];
+        }
+    }
+    // Arrivées → en ligne
+    for (let joueur = 0; joueur < nbJoueurs; joueur++) {
+        for (let a = 0; a < nbArrivees; a++) {
+            if (a < nbArrivees - 1) {
+                cases[arriveesByJoueur[joueur][a] - 1].suivantes = [arriveesByJoueur[joueur][a + 1]];
+            }
+            if (a > 0) {
+                cases[arriveesByJoueur[joueur][a] - 1].precedentes = [arriveesByJoueur[joueur][a - 1]];
+            }
         }
     }
 
-    // Relier les cases de départ à la 18e case du joueur précédent
-    for (let joueur = 1; joueur <= nbJoueurs; joueur++) {
-        const prevJoueur = joueur === 1 ? nbJoueurs : joueur - 1;
-        const cibleId = parcoursIds[prevJoueur][casesParJoueur - 1];
-        for (const departId of departIds[joueur]) {
-            cases[departId].suivantes.push(cibleId);
-            cases[cibleId].precedentes.push(departId);
-        }
-    }
-
-    // Relier la 16e case du joueur précédent à la 1ère case d'arrivée du joueur courant
-    for (let joueur = 1; joueur <= nbJoueurs; joueur++) {
-        const prevJoueur = joueur === 1 ? nbJoueurs : joueur - 1;
-        const case16Id = parcoursIds[prevJoueur][15]; // 16e case (index 15)
-        const arrivee1Id = arriveeIds[joueur][0];
-        // Ici, la 16e case a deux suites possibles : la suite du parcours ET la 1ère arrivée
-        cases[case16Id].suivantes.push(arrivee1Id);
-        cases[arrivee1Id].precedentes.push(case16Id);
-
-        // Relier les cases d'arrivée entre elles
-        for (let a = 0; a < nbArrivees - 1; a++) {
-            cases[arriveeIds[joueur][a]].suivantes.push(arriveeIds[joueur][a + 1]);
-            cases[arriveeIds[joueur][a + 1]].precedentes.push(arriveeIds[joueur][a]);
-        }
-        // La dernière case d'arrivée n'a pas de suivante
-    }
-
+    console.log("[AITock] Plateau généré :", cases);
     return cases;
 }
