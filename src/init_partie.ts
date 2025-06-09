@@ -137,10 +137,13 @@ export async function participerTock(userId: string, joueurNum?: number, chatMes
         }
     }
 
+    const actorType = game.settings.get("aitock", "actorType") ?? "character";
+    const userObj = game.users?.get(userId);
+    const nomActeur = userObj ? `${userObj.name} (${joueurNum})` : `Joueur${joueurNum}`;
     await Actor.create({
-        name: nom,
-        type: "character",
-        ownership: { [userId]: 3 },
+        name: nomActeur,
+        type: actorType,
+        ownership: { [userId]: 3, default: 0 }, // <--- Ajoute default: 0 pour forcer la propriété
         flags: {
             aitock: {
                 couleurJoueur,
@@ -174,10 +177,27 @@ export async function quitterTock(userId: string, joueurNum?: number) {
         places[joueurNum - 1] = null;
         await game.settings.set("aitock", "placesTock", places);
 
-        // Supprime le PJ associé à ce joueur
-        const actor = game.actors?.find((a: any) => a.hasPlayerOwner && a.ownership[userId] === 3);
+        console.log("[AITock] Recherche suppression :",
+    game.actors?.map((a: any) => ({
+        name: a.name,
+        type: a.type,
+        hasPlayerOwner: a.hasPlayerOwner,
+        ownership: a.ownership[userId],
+        numeroJoueur: a.getFlag("aitock", "numeroJoueur")
+    }))
+);
+
+        // Supprime le PJ associé à ce joueur (créé par le module)
+        const actorType = game.settings.get("aitock", "actorType") ?? "character";
+        const actor = game.actors?.find((a: any) =>
+            a.type === actorType &&
+            a.ownership && a.ownership[userId] === 3 &&
+            String(a.getFlag("aitock", "numeroJoueur")) === String(joueurNum)
+        );
         if (actor) {
             await actor.delete();
+        } else {
+            console.warn("[AITock] Aucun acteur trouvé à supprimer pour userId", userId, "num", joueurNum);
         }
 
         ui.notifications?.info("Vous avez quitté la place.");
@@ -191,4 +211,8 @@ Hooks.on("updateUser", async (user: any, data: any) => {
         afficherChoixPlacesTock();
     }
 });
+
+
+
+
 

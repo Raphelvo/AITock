@@ -108,7 +108,49 @@ export function registerAITockSettings() {
             default: Array(4).fill(null)
         });
         console.log("[AITock] Paramètre 'placesTock' enregistré");
+    });
 
-        console.log("[AITock] Tous les paramètres ont été enregistrés !");
+    // Enregistre le paramètre actorType au hook setup (et pas init)
+    Hooks.once('setup', () => {
+        let actorTypes: Record<string, string> = {};
+
+        // 1. Structure moderne (DnD5e, PF2e, etc.)
+        if (game.system?.model?.Actor) {
+            actorTypes = Object.keys(game.system.model.Actor)
+                .filter(key => key.toLowerCase() !== "base")
+                .reduce((acc, key) => ({ ...acc, [key]: key }), {});
+        }
+
+        // 2. Structure via CONFIG.Actor.typeLabels (souvent la plus fiable)
+        if (Object.keys(actorTypes).length === 0 && CONFIG?.Actor?.typeLabels) {
+            actorTypes = { ...CONFIG.Actor.typeLabels };
+            // Supprime "base" et "Base" du menu déroulant si présents
+            delete actorTypes["base"];
+            delete actorTypes["Base"];
+        }
+
+        // 3. Fallback sur les acteurs existants
+        if (Object.keys(actorTypes).length === 0 && game.actors?.size > 0) {
+            for (let actor of game.actors) {
+                actorTypes[actor.type] = actor.type;
+            }
+        }
+
+        // 4. Si toujours rien, propose character par défaut
+        if (Object.keys(actorTypes).length === 0) {
+            actorTypes = { character: "character" };
+        }
+
+        game.settings.register("aitock", "actorType", {
+            name: "Type d'Actor à créer",
+            hint: "Type d'Actor utilisé pour les joueurs (ex: Agent, PNJ, Heist...). Dépend du système.",
+            scope: "world",
+            config: true,
+            type: String,
+            choices: actorTypes,
+            default: Object.keys(actorTypes)[0] ?? "character"
+        });
+        console.log("[AITock] Paramètre 'actorType' enregistré");
+        console.log("[AITock] Types d'Actor détectés :", actorTypes);
     });
 }

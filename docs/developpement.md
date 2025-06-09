@@ -36,4 +36,27 @@
 
 ---
 
-**Dernière mise à jour : juin 2025**
+## Fonctionnalités implémentées (mise à jour juin 2025)
+
+- Attribution dynamique des places et couleurs par joueur
+- Affichage interactif des places dans le chat (prise, libération, couleurs dynamiques)
+- Création automatique d’un PJ associé à l’utilisateur (nom = nom utilisateur + numéro de joueur)
+- Suppression automatique du PJ associé quand le joueur quitte la partie (ownership correct)
+- Sauvegarde dans l’Actor : couleur, numéro, équipe, partenaires
+- Affichage toujours synchronisé avec la couleur de l’utilisateur Foundry
+- Rafraîchissement automatique de la liste si un joueur change sa couleur
+- Gestion du mode équipe (affichage, partenaires, numéro d’équipe)
+- Paramétrage dynamique via `game.settings` (nombre de joueurs, type d’Actor, etc.)
+- Menu déroulant pour choisir le type d’Actor à créer, adapté au système utilisé
+- Compilation TypeScript/JS fonctionnelle (`npx vite build`)
+
+## Comportement actuel
+
+- Lorsqu’un joueur prend une place, un acteur est créé avec son nom et son numéro de joueur, et il en devient propriétaire.
+- Lorsqu’un joueur quitte la partie, l’acteur associé est supprimé automatiquement.
+- Le module est système-agnostique : il s’adapte à la liste des types d’Actor du système Foundry utilisé.
+- L’affichage des places dans le chat est mis à jour en temps réel si un joueur change sa couleur.
+
+---
+
+**Prêt pour commit & push !**
