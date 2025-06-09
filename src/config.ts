@@ -108,6 +108,16 @@ export function registerAITockSettings() {
             default: Array(4).fill(null)
         });
         console.log("[AITock] Paramètre 'placesTock' enregistré");
+
+        // Plateau Tock (caché dans l'UI)
+        game.settings.register("aitock", "plateau", {
+            name: "Plateau Tock",
+            scope: "world",
+            config: false,
+            type: Object,
+            default: []
+        });
+        console.log("[AITock] Paramètre 'plateau' enregistré");
     });
 
     // Enregistre le paramètre actorType au hook setup (et pas init)

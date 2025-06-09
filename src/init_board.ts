@@ -193,5 +193,6 @@ export function creerPlateau(nbJoueurs: number, sceneId?: string): CaseTock[] {
     }
 
     console.log("[AITock] Plateau généré :", cases);
+
     return cases;
 }

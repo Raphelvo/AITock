@@ -74,6 +74,10 @@ export async function dessinerCase(
  */
 export async function afficherPlateau(nbJoueurs: number, sceneId?: string) {
     const plateau = creerPlateau(nbJoueurs, sceneId);
+    if (game.user?.isGM) {
+        await game.settings.set("aitock", "plateau", plateau);
+        console.log("[AITock] Plateau sauvegardé dans les settings du module.");
+    }
     const placesTock: string[] = game.settings.get("aitock", "placesTock") ?? [];
     const couleursDefaut = (window as any).COULEURS_JOUEURS;
     for (const c of plateau) {
@@ -99,21 +103,29 @@ export async function afficherPlateau(nbJoueurs: number, sceneId?: string) {
  * @param nouvelleCouleur La nouvelle couleur à appliquer (ex: "#ff0000")
  */
 export async function mettreAJourCouleurCasesJoueur(joueur: number, nouvelleCouleur: string) {
-    const plateau = creerPlateau(game.settings.get("aitock", "nombreJoueurs"));
-    const caseIds = plateau.filter(c => c.joueur === joueur).map(c => c.id);
-
-    if (!caseIds.length) {
-        console.warn(`[AITock] Aucun id de case trouvé pour le joueur ${joueur}`);
+    const plateau = game.settings.get("aitock", "plateau");
+    if (!plateau) {
+        console.warn("[AITock] Aucun plateau trouvé dans les flags du world.");
         return;
     }
+    // Map caseId -> case pour accès rapide
+    const caseMap = new Map(plateau.map((c: any) => [c.id, c]));
 
     for (const drawing of canvas.drawings.placeables) {
         const caseId = drawing.document.getFlag("aitock", "caseId");
-        if (caseIds.includes(caseId)) {
+        if (caseId === undefined) continue;
+        const c = caseMap.get(caseId);
+        if (!c || c.joueur !== joueur) continue;
+
+        // Applique la couleur seulement si la case est protégée, sinon gris
+        const fillColor = c.protegee ? nouvelleCouleur : "#cccccc";
+        try {
             await drawing.document.update({
-                fillColor: nouvelleCouleur,
+                fillColor,
                 strokeColor: nouvelleCouleur
             });
+        } catch (e) {
+            console.error(`[AITock] Erreur lors de la mise à jour du drawing caseId=${caseId}`, e);
         }
     }
 }
@@ -122,6 +134,7 @@ Hooks.on("updateUser", (user, data) => {
     if (data.color) {
         const placesTock: string[] = game.settings.get("aitock", "placesTock") ?? [];
         const joueur = placesTock.findIndex(uid => uid === user.id) + 1;
+        console.log(`[AITock] updateUser: user=${user.id}, joueur=${joueur}, color=${data.color}`);
         if (joueur > 0) {
             mettreAJourCouleurCasesJoueur(joueur, data.color);
         } else {
