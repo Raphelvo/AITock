@@ -66,3 +66,23 @@ export async function afficherCase1Joueur1(nbJoueurs: number, sceneId?: string) 
     // Affiche la case sur la scène active
     await dessinerCase(case1.x, case1.y, 60, "#33ccff", `1`);
 }
+
+/**
+ * Affiche tout le plateau sur la scène, chaque case sous forme d'ellipse,
+ * avec la couleur du joueur Foundry et le numéro de la case en texte.
+ * @param nbJoueurs Nombre de joueurs
+ * @param sceneId   ID de la scène cible (optionnel, sinon scène active)
+ */
+export async function afficherPlateau(nbJoueurs: number, sceneId?: string) {
+    const plateau = creerPlateau(nbJoueurs, sceneId);
+    const placesTock: string[] = game.settings.get("aitock", "placesTock") ?? [];
+    for (const c of plateau) {
+        // Couleur du joueur Foundry ou gris si non attribué
+        let couleur = "#cccccc";
+        if (c.joueur && placesTock[c.joueur - 1]) {
+            const user = game.users?.get(placesTock[c.joueur - 1]);
+            couleur = user?.color ?? couleur;
+        }
+        await dessinerCase(c.x, c.y, RAYON_CASE, couleur, `${c.numeroCase}`);
+    }
+}
