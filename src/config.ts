@@ -84,7 +84,7 @@ export function registerAITockSettings() {
             scope: "world",
             config: true,
             type: Boolean,
-            default: false
+            default: true
         });
         console.log("[AITock] Paramètre 'septRenvoiePions' enregistré");
 
@@ -98,6 +98,16 @@ export function registerAITockSettings() {
             default: false
         });
         console.log("[AITock] Paramètre 'cinqAvanceNimporteQuelPion' enregistré");
+
+        // Places Tock (caché dans l'UI)
+        game.settings.register("aitock", "placesTock", {
+            name: "Places Tock",
+            scope: "world",
+            config: false,
+            type: Array,
+            default: Array(4).fill(null)
+        });
+        console.log("[AITock] Paramètre 'placesTock' enregistré");
 
         console.log("[AITock] Tous les paramètres ont été enregistrés !");
     });

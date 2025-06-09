@@ -23,12 +23,32 @@ function exampleFunction() {
 // Pour accès global éventuel
 window.AITock = {
     exampleFunction,
-    demarrerPartieTock,
-    participerTock
 };
 
 // Affiche une notification traduite à l'ouverture du monde
 Hooks.once('ready', () => {
-    ui.notifications?.info("YOYOYOYO");
+    ui.notifications?.info("Module AITock chargé !");
+
+    window.AITock = {
+        ...window.AITock,
+        demarrerPartieTock,
+        participerTock
+    };
+
+    // Ajoute un bouton "Tock" dans la barre latérale
+    if (game.user?.isGM) {
+        const button = document.createElement("button");
+        button.innerHTML = `<i class="fas fa-chess-board"></i> Tock`;
+        button.style.margin = "8px";
+        button.onclick = () => {
+            window.AITock?.demarrerPartieTock();
+        };
+
+        // Ajoute le bouton dans la barre latérale de Foundry (dans la section "navigation")
+        const nav = document.querySelector("#sidebar #sidebar-tabs");
+        if (nav) {
+            nav.appendChild(button);
+        }
+    }
 });
 
