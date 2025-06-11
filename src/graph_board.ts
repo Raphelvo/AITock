@@ -1,4 +1,5 @@
 import { creerPlateau } from "./init_board";
+import { creerTokensDepartPourJoueur } from "./graph_board";
 
 /**
  * Dessine une case sur la scène active Foundry.
@@ -73,6 +74,15 @@ export async function dessinerCase(
  * @param sceneId   ID de la scène cible (optionnel, sinon scène active)
  */
 export async function afficherPlateau(nbJoueurs: number, sceneId?: string) {
+    // Supprime uniquement les drawings du Tock (ceux avec le flag aitock.caseId défini)
+    const drawingsTock = canvas.drawings.placeables.filter(d =>
+        d.document.getFlag("aitock", "caseId") !== undefined && d.document.getFlag("aitock", "caseId") !== null
+    );
+    if (drawingsTock.length > 0) {
+        const ids = drawingsTock.map(d => d.id);
+        await canvas.scene.deleteEmbeddedDocuments("Drawing", ids);
+    }
+
     const plateau = creerPlateau(nbJoueurs, sceneId);
     if (game.user?.isGM) {
         await game.settings.set("aitock", "plateau", plateau);
@@ -130,6 +140,51 @@ export async function mettreAJourCouleurCasesJoueur(joueur: number, nouvelleCoul
     }
 }
 
+/**
+ * Crée 4 tokens sur les zones de depart pour le joueur donné.
+ * @param numeroJoueur Le numero du joueur (1, 2, ...)
+ * @param actorId L'id de l'acteur du joueur
+ */
+export async function creerTokensDepartPourJoueur(numeroJoueur: number, actorId: string) {
+    const plateau = game.settings.get("aitock", "plateau");
+    if (!plateau) {
+        console.warn("[AITock] Aucun plateau trouve pour la creation des tokens.");
+        return;
+    }
+    // On cherche les cases de depart du joueur
+    const casesDepart = plateau.filter((c: any) => c.joueur === numeroJoueur && c.type === "depart");
+
+    // Récupère la couleur du joueur (depuis l'Actor ou la config)
+    let couleur = "#cccccc";
+    const actor = game.actors?.get(actorId);
+    couleur = actor?.getFlag("aitock", "couleurJoueur") || couleur;
+
+    for (let i = 0; i < casesDepart.length; i++) {
+        const c = casesDepart[i];
+        // Centre le token sur la case (le token fait 1x1 cases, soit 70x70px par défaut)
+        const tokenSize = canvas.grid?.size ?? 70;
+        await canvas.scene.createEmbeddedDocuments("Token", [{
+            x: c.x - tokenSize / 2,
+            y: c.y - tokenSize / 2,
+            width: 1,
+            height: 1,
+            name: `Pion ${i + 1} Joueur ${numeroJoueur}`,
+            actorId: actorId,
+            flags: {
+                aitock: {
+                    joueur: numeroJoueur,
+                    pion: i + 1,
+                    tock: true,
+                    caseId: c.id // <-- mémorise l'id de la case d'origine
+                }
+            },
+            texture: {
+                tint: couleur
+            }
+        }]);
+    }
+}
+
 Hooks.on("updateUser", (user, data) => {
     if (data.color) {
         const placesTock: string[] = game.settings.get("aitock", "placesTock") ?? [];
@@ -139,6 +194,33 @@ Hooks.on("updateUser", (user, data) => {
             mettreAJourCouleurCasesJoueur(joueur, data.color);
         } else {
             console.warn(`[AITock] Aucun joueur associé à l'user.id=${user.id}`);
+        }
+    }
+});
+
+Hooks.on("updateToken", async (scene, tokenDoc, updateData, options, userId) => {
+    if (typeof tokenDoc.getFlag !== "function") return;
+    if (!tokenDoc.getFlag("aitock", "tock")) return;
+    const caseId = tokenDoc.getFlag("aitock", "caseId");
+    if (!caseId) return;
+
+    const plateau = game.settings.get("aitock", "plateau");
+    const caseCible = plateau?.find((c: any) => c.id === caseId);
+    if (!caseCible) return;
+
+    const tokenSize = canvas.grid?.size ?? 70;
+    const xAttendu = caseCible.x - tokenSize / 2;
+    const yAttendu = caseCible.y - tokenSize / 2;
+
+    // Récupère le token "placeable" sur la scène (pour avoir la vraie position affichée)
+    const placeable = canvas.tokens?.get(tokenDoc.id);
+    if (!placeable) return;
+
+    // Si la position réelle a changé, on remet le token à sa place
+    if (updateData.x !== undefined || updateData.y !== undefined) {
+        if (Math.abs(placeable.x - xAttendu) > 1 || Math.abs(placeable.y - yAttendu) > 1) {
+            await tokenDoc.update({ x: xAttendu, y: yAttendu });
+            ui.notifications?.info("[AITock] Ce pion doit rester sur sa case de depart !");
         }
     }
 });
