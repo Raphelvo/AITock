@@ -1,12 +1,13 @@
 {
   "id": "aitock",
   "title": "AI-Tock",
-  "description": "Générateur de plateau Tock (4 ou 6 joueurs, équipes ou non) pour FoundryVTT. Gestion des mains, couleurs, règles et notifications.",
+  "description": "...",
   "version": "1.0.0",
-      "compatibility": {
-        "minimum": "13",
-        "verified": "13"
-    },
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "socket": true,
   "scripts": [
     "dist/main.js"
   ],

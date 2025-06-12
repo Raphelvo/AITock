@@ -11,6 +11,7 @@ import { registerAITockSettings } from "./config";
 import { demarrerPartieTock, participerTock } from "./init_partie";
 import { dessinerCase, afficherPlateau} from "./graph_board";
 import { creerPlateau } from "./init_board";
+import { demanderDeplacementJeton } from "./gestion_jeton";
 
 // Enregistrement des paramètres du module
 registerAITockSettings();
@@ -31,19 +32,12 @@ window.AITock = {
 Hooks.once('ready', async () => {
     ui.notifications?.info("Module AITock chargé !");
 
-    // Dessine une case au centre de la scène (test temporaire)
-    if (canvas?.scene) {
-        const x = canvas.scene.width / 2;
-        const y = canvas.scene.height / 2;
-        dessinerCase(x, y, 60, "#ff8800", "Test");
-    }
-
     window.AITock = {
         ...window.AITock,
-        dessinerCase,
         demarrerPartieTock,
         participerTock,
-        afficherPlateau
+        afficherPlateau,
+        demanderDeplacementJeton
     };
 
     // Ajoute un bouton "Tock" dans la barre d'outils à gauche (sous le logo)
