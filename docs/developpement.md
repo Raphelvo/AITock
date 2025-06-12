@@ -29,6 +29,8 @@
 - [x] Exposition des fonctions principales sur `window.AITock`
 - [x] Utilisation du hook moderne `renderChatMessageHTML` (compatible Foundry v13+)
 - [x] Paramétrage dynamique via `game.settings`
+- [x] Mise à jour dynamique des couleurs des cases protégées lors du changement de couleur d’un joueur
+- [x] Correction du centrage du plateau (préparation pour padding)
 - [ ] Gestion complète du tour de jeu et des déplacements
 - [ ] Gestion des effets spéciaux et règles avancées
 - [ ] Interface graphique avancée (tableau, pions, etc.)
@@ -51,6 +53,8 @@
 - Paramétrage dynamique via `game.settings` (nombre de joueurs, type d’Actor, etc.)
 - Menu déroulant pour choisir le type d’Actor à créer, adapté au système utilisé
 - Compilation TypeScript/JS fonctionnelle (`npx vite build`)
+- Mise à jour des couleurs des cases protégées uniquement (autres cases restent grises)
+- Correction du centrage du plateau (prise en compte du padding)
 
 ## Comportement actuel
 
@@ -58,6 +62,8 @@
 - Lorsqu’un joueur quitte la partie, l’acteur associé est supprimé automatiquement.
 - Le module est système-agnostique : il s’adapte à la liste des types d’Actor du système Foundry utilisé.
 - L’affichage des places dans le chat est mis à jour en temps réel si un joueur change sa couleur.
+- Les cases protégées changent dynamiquement de couleur selon la couleur du joueur, les autres restent grises.
+- Le plateau est centré sur la scène, avec gestion du padding.
 
 ---
 
@@ -83,13 +89,15 @@
 - [X] Correction de la mise à jour dynamique des couleurs des cases lors du changement de couleur d’un joueur.
 - [X] Sécurisation de la génération du plateau et des accès aux tableaux internes.
 - [X] Documentation du processus de développement et des étapes dans les fichiers docs/.
+- [X] Correction du centrage du plateau et gestion du padding.
+- [X] Mise à jour des couleurs uniquement sur les cases protégées.
 
 ## TODO-list
 
 - [ ] Finaliser la gestion des arrivées et des connexions spéciales entre cases.
 - [ ] Ajouter des tests unitaires pour la génération du plateau.
 - [ ] Améliorer l’interface utilisateur pour la sélection des places et la visualisation du plateau.
-- [ ] Ajouter la gestion des pions et des déplacements.
+- [ ] Ajouter la gestion des pions et des déplacements (création/suppression automatique de tokens).
 - [ ] Documenter les prochaines étapes dans `docs/etat_avancement.md` après chaque tâche terminée.
 
 ---

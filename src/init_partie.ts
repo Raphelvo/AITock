@@ -1,3 +1,5 @@
+import { creerTokensDepartPourJoueur } from "./graph_board";
+
 /**
  * Démarre une partie de Tock :
  * - Efface tous les anciens PJ (Actors de type "character")
@@ -17,9 +19,21 @@ const couleursJoueurs = [
 (window as any).COULEURS_JOUEURS = couleursJoueurs;
 
 export async function demarrerPartieTock() {
-    const anciensPJ = game.actors?.filter((a: any) => a.type === "character") ?? [];
-    for (const pj of anciensPJ) {
-        await pj.delete();
+    // Supprime tous les tokens créés par le module Tock
+    const tokensTock = canvas.tokens.placeables.filter(t =>
+        t.document.getFlag("aitock", "tock") === true
+    );
+    if (tokensTock.length > 0) {
+        const ids = tokensTock.map(t => t.id);
+        await canvas.scene.deleteEmbeddedDocuments("Token", ids);
+    }
+
+    // Supprime tous les acteurs créés par le module Tock (ayant le flag aitock.numeroJoueur)
+    const acteursTock = game.actors?.filter((a: any) =>
+        a.getFlag && a.getFlag("aitock", "numeroJoueur") !== undefined
+    ) ?? [];
+    for (const acteur of acteursTock) {
+        await acteur.delete();
     }
 
     const nbJoueurs = parseInt(game.settings.get("aitock", "nombreJoueurs") ?? "4");
@@ -174,6 +188,15 @@ export async function participerTock(userId: string, joueurNum?: number, chatMes
         await user.update({ color: couleurJoueur });
     }
 
+    // Après la création de l'acteur, récupère l'acteur créé
+    const nouvelActeur = game.actors?.find((a: any) =>
+        a.ownership && a.ownership[userId] === 3 &&
+        String(a.getFlag("aitock", "numeroJoueur")) === String(joueurNum)
+    );
+    if (nouvelActeur) {
+        await creerTokensDepartPourJoueur(joueurNum, nouvelActeur.id);
+    }
+
     afficherChoixPlacesTock();
 }
 
@@ -196,14 +219,14 @@ export async function quitterTock(userId: string, joueurNum?: number) {
         await game.settings.set("aitock", "placesTock", places);
 
         console.log("[AITock] Recherche suppression :",
-    game.actors?.map((a: any) => ({
-        name: a.name,
-        type: a.type,
-        hasPlayerOwner: a.hasPlayerOwner,
-        ownership: a.ownership[userId],
-        numeroJoueur: a.getFlag("aitock", "numeroJoueur")
-    }))
-);
+            game.actors?.map((a: any) => ({
+                name: a.name,
+                type: a.type,
+                hasPlayerOwner: a.hasPlayerOwner,
+                ownership: a.ownership[userId],
+                numeroJoueur: a.getFlag("aitock", "numeroJoueur")
+            }))
+        );
 
         // Supprime le PJ associé à ce joueur (créé par le module)
         const actorType = game.settings.get("aitock", "actorType") ?? "character";
@@ -216,6 +239,16 @@ export async function quitterTock(userId: string, joueurNum?: number) {
             await actor.delete();
         } else {
             console.warn("[AITock] Aucun acteur trouvé à supprimer pour userId", userId, "num", joueurNum);
+        }
+
+        // Supprime les tokens du module Tock pour ce joueur
+        const tokensToDelete = canvas.tokens.placeables.filter(t =>
+            t.document.getFlag("aitock", "tock") === true &&
+            t.document.getFlag("aitock", "joueur") === joueurNum
+        );
+        if (tokensToDelete.length > 0) {
+            const ids = tokensToDelete.map(t => t.id);
+            await canvas.scene.deleteEmbeddedDocuments("Token", ids);
         }
 
         ui.notifications?.info("Vous avez quitté la place.");

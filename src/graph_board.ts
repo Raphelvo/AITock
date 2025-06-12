@@ -161,8 +161,9 @@ export async function creerTokensDepartPourJoueur(numeroJoueur: number, actorId:
 
     for (let i = 0; i < casesDepart.length; i++) {
         const c = casesDepart[i];
-        // Centre le token sur la case (le token fait 1x1 cases, soit 70x70px par défaut)
         const tokenSize = canvas.grid?.size ?? 70;
+        // Chaque pion du joueur a une image différente : bille1.png, bille2.png, bille3.png, bille4.png
+        const imageBille = `modules/aitock/assets/jetons/bille_claire_num${i + 1}.png`;
         await canvas.scene.createEmbeddedDocuments("Token", [{
             x: c.x - tokenSize / 2,
             y: c.y - tokenSize / 2,
@@ -175,12 +176,14 @@ export async function creerTokensDepartPourJoueur(numeroJoueur: number, actorId:
                     joueur: numeroJoueur,
                     pion: i + 1,
                     tock: true,
-                    caseId: c.id // <-- mémorise l'id de la case d'origine
+                    caseId: c.id
                 }
             },
             texture: {
-                tint: couleur
-            }
+                src: imageBille, // <-- Image spécifique au pion (1 à 4)
+                tint: couleur    // <-- Couleur du joueur
+            },
+            borderColor: "#000000"
         }]);
     }
 }
@@ -198,10 +201,14 @@ Hooks.on("updateUser", (user, data) => {
     }
 });
 
+// Retire le hook updateToken qui repositionne automatiquement le pion
+// (Supprime ou commente tout le bloc suivant)
+/*
 Hooks.on("updateToken", async (scene, tokenDoc, updateData, options, userId) => {
-    if (typeof tokenDoc.getFlag !== "function") return;
-    if (!tokenDoc.getFlag("aitock", "tock")) return;
-    const caseId = tokenDoc.getFlag("aitock", "caseId");
+    const tokenDocument = canvas.scene.tokens.get(tokenDoc.id || tokenDoc._id);
+    if (!tokenDocument) return;
+    if (!tokenDocument.getFlag("aitock", "tock")) return;
+    const caseId = tokenDocument.getFlag("aitock", "caseId");
     if (!caseId) return;
 
     const plateau = game.settings.get("aitock", "plateau");
@@ -212,15 +219,27 @@ Hooks.on("updateToken", async (scene, tokenDoc, updateData, options, userId) => 
     const xAttendu = caseCible.x - tokenSize / 2;
     const yAttendu = caseCible.y - tokenSize / 2;
 
-    // Récupère le token "placeable" sur la scène (pour avoir la vraie position affichée)
-    const placeable = canvas.tokens?.get(tokenDoc.id);
+    // Si la mise à jour vient déjà d'un repositionnement automatique, ne rien faire
+    if (options?.aitockAuto) return;
+
+    const placeable = canvas.tokens?.get(tokenDocument.id);
     if (!placeable) return;
 
-    // Si la position réelle a changé, on remet le token à sa place
-    if (updateData.x !== undefined || updateData.y !== undefined) {
-        if (Math.abs(placeable.x - xAttendu) > 1 || Math.abs(placeable.y - yAttendu) > 1) {
-            await tokenDoc.update({ x: xAttendu, y: yAttendu });
-            ui.notifications?.info("[AITock] Ce pion doit rester sur sa case de depart !");
+    // Ne repositionne et ne notifie que si la position a vraiment changé
+    if (Math.abs(placeable.x - xAttendu) > 1 || Math.abs(placeable.y - yAttendu) > 1) {
+        await tokenDocument.update({ x: xAttendu, y: yAttendu }, { aitockAuto: true });
+        ui.notifications?.info("AITock: Ce pion doit rester sur sa case !");
+    }
+});
+*/
+
+// Remets le contrôle interdit sur les pions Tock
+Hooks.on("controlToken", (token, controlled) => {
+    if (token.document.getFlag("aitock", "tock")) {
+        if (controlled) {
+            token.release();
+            ui.notifications?.warn("AITock: Déplacement interdit, les pions se déplacent à l'aide de cartes !");
         }
+        return false;
     }
 });
